@@ -7,7 +7,6 @@
 #include "Bitmap.h"
 #include "PicButton.h"
 #include "CheckBox.h"
-#include "Slider.h"
 #include "SpinControl.h"
 #include "StringArrayModel.h"
 
@@ -36,16 +35,16 @@ private:
 	void SaveAndPopMenu() override;
 	void GetMSAA();
 	void WriteMSAA();
+	void GetViewBobbing();
+	void WriteViewBobbing();
+	void WriteInteractionBrackets();
 
 	bool m_bGLActive;
 
 	CMenuSpinControl msaa;
-	CMenuCheckBox cameraBob;
-	CMenuSlider viewmodelBob;
-	CMenuSlider viewmodelLag;
-	CMenuSlider bracketScale;
+	CMenuCheckBox viewBobbing;
+	CMenuCheckBox interactionBrackets;
 	CMenuCheckBox npcRagdolls;
-	CMenuSlider maxRagdolls;
 	CMenuCheckBox lowViolence;
 };
 
@@ -78,17 +77,44 @@ void CMenuProjectFeatures::WriteMSAA()
 	EngFuncs::CvarSetValue( "gl_msaa_samples", (float)samples );
 }
 
+void CMenuProjectFeatures::GetViewBobbing()
+{
+	// Treat the camera bob and both viewmodel motion components as one option.
+	// If any component is enabled in an existing config, display the option as on.
+	const bool enabled =
+		EngFuncs::GetCvarFloat( "cl_viewbob" ) > 0.0f ||
+		EngFuncs::GetCvarFloat( "cl_hl2_viewmodel_bob" ) > 0.0f ||
+		EngFuncs::GetCvarFloat( "cl_hl2_viewmodel_lag" ) > 0.0f;
+
+	viewBobbing.SetCvarValue( enabled ? 1.0f : 0.0f );
+}
+
+void CMenuProjectFeatures::WriteViewBobbing()
+{
+	// Keep the original implementation values fixed; the menu exposes only
+	// a single on/off choice, not individual tuning controls.
+	const float value = viewBobbing.CvarValue() > 0.5f ? 1.0f : 0.0f;
+
+	EngFuncs::CvarSetValue( "cl_viewbob", value );
+	EngFuncs::CvarSetValue( "cl_hl2_viewmodel_bob", value );
+	EngFuncs::CvarSetValue( "cl_hl2_viewmodel_lag", value );
+}
+
+void CMenuProjectFeatures::WriteInteractionBrackets()
+{
+	// Preserve the established 0.5 scale; the option is only enabled/disabled.
+	const float scale = interactionBrackets.CvarValue() > 0.5f ? 0.5f : 0.0f;
+	EngFuncs::CvarSetValue( "sv_useable_bracket_scale", scale );
+}
+
 void CMenuProjectFeatures::SaveAndPopMenu()
 {
 	if( m_bGLActive )
 		msaa.WriteCvar();
 
-	cameraBob.WriteCvar();
-	viewmodelBob.WriteCvar();
-	viewmodelLag.WriteCvar();
-	bracketScale.WriteCvar();
+	viewBobbing.WriteCvar();
+	interactionBrackets.WriteCvar();
 	npcRagdolls.WriteCvar();
-	maxRagdolls.WriteCvar();
 	lowViolence.WriteCvar();
 
 	CMenuFramework::SaveAndPopMenu();
@@ -106,58 +132,42 @@ void CMenuProjectFeatures::_Init()
 	msaa.onCvarGet = VoidCb( &CMenuProjectFeatures::GetMSAA );
 	msaa.onCvarWrite = VoidCb( &CMenuProjectFeatures::WriteMSAA );
 
-	// VoidCb invokes CMenuProjectFeatures methods through the item's parent.
-	// Add the spin control first so Parent() is valid when LinkCvar immediately
-	// calls UpdateCvar() -> onCvarGet.
-	AddItem( msaa );
-	msaa.LinkCvar( "gl_msaa_samples", CMenuEditable::CVAR_VALUE );
+	viewBobbing.szName = L( "View bobbing" );
+	viewBobbing.szStatusText = L( "Enable or disable first-person camera and weapon movement" );
+	viewBobbing.SetCoord( 360, 320 );
+	viewBobbing.onCvarGet = VoidCb( &CMenuProjectFeatures::GetViewBobbing );
+	viewBobbing.onCvarWrite = VoidCb( &CMenuProjectFeatures::WriteViewBobbing );
 
-	cameraBob.szName = L( "GoldSrc camera bob" );
-	cameraBob.szStatusText = L( "Enable the original first-person camera movement" );
-	cameraBob.SetCoord( 360, 320 );
-	cameraBob.LinkCvar( "cl_viewbob" );
-
-	viewmodelBob.szName = L( "Portal 2 weapon bob (0 = off)" );
-	viewmodelBob.Setup( 0.0f, 2.0f, 0.05f );
-	viewmodelBob.SetRect( 360, 385, 300, 32 );
-	viewmodelBob.LinkCvar( "cl_hl2_viewmodel_bob" );
-
-	viewmodelLag.szName = L( "Portal 2 weapon lag (0 = off)" );
-	viewmodelLag.Setup( 0.0f, 2.0f, 0.05f );
-	viewmodelLag.SetRect( 360, 445, 300, 32 );
-	viewmodelLag.LinkCvar( "cl_hl2_viewmodel_lag" );
-
-	bracketScale.szName = L( "PS2 interaction brackets (0 = off)" );
-	bracketScale.Setup( 0.0f, 4.0f, 0.05f );
-	bracketScale.SetRect( 360, 505, 300, 32 );
-	bracketScale.LinkCvar( "sv_useable_bracket_scale" );
+	interactionBrackets.szName = L( "PS2 interaction brackets" );
+	interactionBrackets.szStatusText = L( "Enable or disable interaction brackets" );
+	interactionBrackets.SetCoord( 360, 390 );
+	interactionBrackets.onCvarWrite = VoidCb( &CMenuProjectFeatures::WriteInteractionBrackets );
 
 	npcRagdolls.szName = L( "NPC articulated ragdolls" );
 	npcRagdolls.szStatusText = L( "Use the custom Jolt-backed NPC ragdoll system" );
-	npcRagdolls.SetCoord( 360, 565 );
-	npcRagdolls.LinkCvar( "sv_npc_vphysics" );
-
-	maxRagdolls.szName = L( "Maximum active NPC ragdolls" );
-	maxRagdolls.Setup( 0.0f, 16.0f, 1.0f );
-	maxRagdolls.SetRect( 360, 625, 300, 32 );
-	maxRagdolls.LinkCvar( "sv_npc_vphysics_max_ragdolls" );
+	npcRagdolls.SetCoord( 360, 460 );
 
 	lowViolence.szName = L( "Low-violence ragdoll fading" );
 	lowViolence.szStatusText = L( "Fade retired NPC ragdolls instead of leaving them visible" );
-	lowViolence.SetCoord( 360, 685 );
-	lowViolence.LinkCvar( "sv_npc_vphysics_low_violence" );
+	lowViolence.SetCoord( 360, 530 );
 
 	AddItem( banner );
 	AddButton( L( "Apply" ), nullptr, PC_OK, VoidCb( &CMenuProjectFeatures::SaveAndPopMenu ) );
 	AddButton( L( "Cancel" ), nullptr, PC_CANCEL, VoidCb( &CMenuFramework::Hide ) );
 
-	AddItem( cameraBob );
-	AddItem( viewmodelBob );
-	AddItem( viewmodelLag );
-	AddItem( bracketScale );
+	// These items must belong to this window before LinkCvar() can invoke
+	// parent-bound callbacks via UpdateCvar().
+	AddItem( msaa );
+	AddItem( viewBobbing );
+	AddItem( interactionBrackets );
 	AddItem( npcRagdolls );
-	AddItem( maxRagdolls );
 	AddItem( lowViolence );
+
+	msaa.LinkCvar( "gl_msaa_samples", CMenuEditable::CVAR_VALUE );
+	viewBobbing.LinkCvar( "cl_viewbob" );
+	interactionBrackets.LinkCvar( "sv_useable_bracket_scale" );
+	npcRagdolls.LinkCvar( "sv_npc_vphysics" );
+	lowViolence.LinkCvar( "sv_npc_vphysics_low_violence" );
 }
 
 void CMenuProjectFeatures::Reload()
