@@ -170,6 +170,6 @@ ADD_MENU3( menu_projectfeatures, CMenuProjectFeatures, UI_ProjectFeatures_Menu )
 void UI_ProjectFeatures_Menu( void )
 {
 	menu_projectfeatures->banner.SetPicture( ART_BANNER );
-	menu_projectfeatures->szName = L( "Graphics and project features" );
+	menu_projectfeatures->szName = L( "Advanced" );
 	menu_projectfeatures->Show();
 }
