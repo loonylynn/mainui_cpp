@@ -117,6 +117,7 @@ void CMenuProjectFeatures::SaveAndPopMenu()
 	interactionBrackets.WriteCvar();
 	npcRagdolls.WriteCvar();
 	lowViolence.WriteCvar();
+	stencilShadows.WriteCvar();
 
 	CMenuFramework::SaveAndPopMenu();
 }
