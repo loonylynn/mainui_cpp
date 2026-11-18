@@ -105,6 +105,11 @@ void CMenuProjectFeatures::_Init()
 	msaa.SetCharSize( QM_SMALLFONT );
 	msaa.onCvarGet = VoidCb( &CMenuProjectFeatures::GetMSAA );
 	msaa.onCvarWrite = VoidCb( &CMenuProjectFeatures::WriteMSAA );
+
+	// VoidCb invokes CMenuProjectFeatures methods through the item's parent.
+	// Add the spin control first so Parent() is valid when LinkCvar immediately
+	// calls UpdateCvar() -> onCvarGet.
+	AddItem( msaa );
 	msaa.LinkCvar( "gl_msaa_samples", CMenuEditable::CVAR_VALUE );
 
 	cameraBob.szName = L( "GoldSrc camera bob" );
@@ -146,7 +151,6 @@ void CMenuProjectFeatures::_Init()
 	AddButton( L( "Apply" ), nullptr, PC_OK, VoidCb( &CMenuProjectFeatures::SaveAndPopMenu ) );
 	AddButton( L( "Cancel" ), nullptr, PC_CANCEL, VoidCb( &CMenuFramework::Hide ) );
 
-	AddItem( msaa );
 	AddItem( cameraBob );
 	AddItem( viewmodelBob );
 	AddItem( viewmodelLag );
