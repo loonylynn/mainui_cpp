@@ -46,6 +46,7 @@ private:
 	CMenuCheckBox interactionBrackets;
 	CMenuCheckBox npcRagdolls;
 	CMenuCheckBox lowViolence;
+	CMenuCheckBox stencilShadows;
 };
 
 void CMenuProjectFeatures::GetMSAA()
@@ -151,6 +152,10 @@ void CMenuProjectFeatures::_Init()
 	lowViolence.szStatusText = L( "Fade retired NPC ragdolls instead of leaving them visible" );
 	lowViolence.SetCoord( 360, 530 );
 
+	stencilShadows.szName = L( "Stencil shadows (Experimental)" );
+	stencilShadows.szStatusText = L( "Enable the experimental projected studio shadow renderer" );
+	stencilShadows.SetCoord( 360, 600 );
+
 	AddItem( banner );
 	AddButton( L( "Apply" ), nullptr, PC_OK, VoidCb( &CMenuProjectFeatures::SaveAndPopMenu ) );
 	AddButton( L( "Cancel" ), nullptr, PC_CANCEL, VoidCb( &CMenuFramework::Hide ) );
@@ -162,12 +167,14 @@ void CMenuProjectFeatures::_Init()
 	AddItem( interactionBrackets );
 	AddItem( npcRagdolls );
 	AddItem( lowViolence );
+	AddItem( stencilShadows );
 
 	msaa.LinkCvar( "gl_msaa_samples", CMenuEditable::CVAR_VALUE );
 	viewBobbing.LinkCvar( "cl_viewbob" );
 	interactionBrackets.LinkCvar( "sv_useable_bracket_scale" );
 	npcRagdolls.LinkCvar( "sv_npc_vphysics" );
 	lowViolence.LinkCvar( "sv_npc_vphysics_low_violence" );
+	stencilShadows.LinkCvar( "r_shadows" );
 }
 
 void CMenuProjectFeatures::Reload()
